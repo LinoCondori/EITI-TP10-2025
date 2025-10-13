@@ -1,8 +1,9 @@
-/* Copyright 2022, Laboratorio de Microprocesadores
- * Facultad de Ciencias Exactas y Tecnología
- * Universidad Nacional de Tucuman
- * http://www.microprocesadores.unt.edu.ar/
- * Copyright 2022, Esteban Volentini <evolentini@herrera.unt.edu.ar>
+/* Copyright 2017, Esteban Volentini - Facet UNT, Fi UNER
+ * Copyright 2014, 2015 Mariano Cerdeiro
+ * Copyright 2014, Pablo Ridolfi
+ * Copyright 2014, Juan Cecconi
+ * Copyright 2014, Gustavo Muro
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,50 +33,75 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** \brief Simple sample of use LPC HAL gpio functions
+/** @file blinking.c
  **
- ** \addtogroup samples Sample projects
- ** \brief Sample projects to use as a starting point
- ** @{ */
+ ** @brief Ejemplo de un led parpadeando
+ **
+ ** Ejemplo de un led parpadeando utilizando la capa de abstraccion de
+ ** hardware y con sistema operativo FreeRTOS.
+ **
+ ** | RV | YYYY.MM.DD | Autor       | Descripción de los cambios              |
+ ** |----|------------|-------------|-----------------------------------------|
+ ** |  2 | 2017.10.16 | evolentini  | Correción en el formato del archivo     |
+ ** |  1 | 2017.09.21 | evolentini  | Version inicial del archivo             |
+ **
+ ** @defgroup ejemplos Proyectos de ejemplo
+ ** @brief Proyectos de ejemplo de la Especialización en Sistemas Embebidos
+ ** @{
+ */
 
-/* === Headers files inclusions =============================================================== */
-
-
-#include <stdbool.h>
+/* === Inclusiones de cabeceras ============================================ */
+#include "FreeRTOS.h"
 #include "bsp.h"
-#include "pantalla.h"
-#include "poncho.h"
-/* === Macros definitions ====================================================================== */
+#include "task.h"
+#include <stdbool.h>
 
+/* === Definicion y Macros ================================================= */
 
-/* === Private data type declarations ========================================================== */
+/* === Declaraciones de tipos de datos internos ============================ */
 
-/* === Private variable declarations =========================================================== */
+/* === Declaraciones de funciones internas ================================= */
 
-/* === Private function declarations =========================================================== */
+/* === Definiciones de variables internas ================================== */
 
-/* === Public variable definitions ============================================================= */
+static board_t board;
 
-/* === Private variable definitions ============================================================ */
+/* === Definiciones de variables externas ================================== */
 
-/* === Private function implementation ========================================================= */
+/* === Definiciones de funciones internas ================================== */
 
-/* === Public function implementation ========================================================= */
-
-int main(void) {
-
-
+void Blinking(void * parameters) {
     while (true) {
-        
-
-        for (int delay = 0; delay < 25000; delay++) {
-            __asm("NOP");
-        }
-
-   
-}
+        DigitalOutputToggle(board->led_azul);
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
 }
 
-/* === End of documentation ==================================================================== */
+/* === Definiciones de funciones externas ================================== */
 
-/** @} End of module definition for doxygen */
+/** @brief Función principal del programa
+ **
+ ** @returns 0 La función nunca debería termina
+ **
+ ** @remarks En un sistema embebido la función main() nunca debe terminar.
+ **          El valor de retorno 0 es para evitar un error en el compilador.
+ */
+int main(void) {
+    /* Inicializaciones y configuraciones de dispositivos */
+    board = BoardCreate();
+
+    /* Creación de las tareas */
+    xTaskCreate(Blinking, "Baliza", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+
+    /* Arranque del sistema operativo */
+    vTaskStartScheduler();
+
+    /* vTaskStartScheduler solo retorna si se detiene el sistema operativo */
+    while (1) {
+    };
+
+    /* El valor de retorno es solo para evitar errores en el compilador*/
+    return 0;
+}
+/* === Ciere de documentacion ============================================== */
+/** @} Final de la definición del modulo para doxygen */

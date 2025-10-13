@@ -1,5 +1,5 @@
-/* Copyright 2022, Laboratorio de Microprocesadores 
- * Facultad de Ciencias Exactas y Tecnología 
+/* Copyright 2022, Laboratorio de Microprocesadores
+ * Facultad de Ciencias Exactas y Tecnología
  * Universidad Nacional de Tucuman
  * http://www.microprocesadores.unt.edu.ar/
  * Copyright 2022, Esteban Volentini <evolentini@herrera.unt.edu.ar>
@@ -55,7 +55,7 @@ extern "C" {
 /* === Public macros definitions =============================================================== */
 
 /* === Public data type declarations =========================================================== */
- 
+
 typedef struct board_s {
     digital_output_t led_azul;
     digital_output_t led_rojo;
@@ -66,7 +66,7 @@ typedef struct board_s {
     digital_input_t boton_cambiar;
     digital_input_t boton_prender;
     digital_input_t boton_apagar;
-} const * board_t;
+} * board_t;
 
 /* === Public variable declarations ============================================================ */
 
@@ -84,4 +84,4 @@ void SisTick_Init(uint16_t ticks);
 
 /** @} End of module definition for doxygen */
 
-#endif   /* BSP_H */
+#endif /* BSP_H */
