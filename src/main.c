@@ -59,6 +59,10 @@
 /* === Definicion y Macros ================================================= */
 
 /* === Declaraciones de tipos de datos internos ============================ */
+typedef struct parametros_s {
+    digital_output_t led;
+    uint16_t periodo;
+} * parametros_t;
 
 /* === Declaraciones de funciones internas ================================= */
 
@@ -66,16 +70,56 @@
 
 static board_t board;
 
+static bool estado=0;
+
 /* === Definiciones de variables externas ================================== */
 
 /* === Definiciones de funciones internas ================================== */
 
 void Blinking(void * parameters) {
+    parametros_t parametros = parameters;
+
     while (true) {
-        DigitalOutputToggle(board->led_azul);
-        vTaskDelay(pdMS_TO_TICKS(500));
+        DigitalOutputToggle(parametros->led);
+        vTaskDelay(pdMS_TO_TICKS(parametros->periodo));
     }
 }
+
+void Blinking_Amariilo(void * parameters) {
+
+    parametros_t parametros = parameters;
+
+    TickType_t ultimo_valor;
+    
+
+    ultimo_valor = xTaskGetTickCount();
+    while (true) {
+        DigitalOutputToggle(parametros->led);
+        vTaskDelayUntil(&ultimo_valor, pdMS_TO_TICKS(parametros->periodo));
+    }
+}
+
+void Teclado(void * parameters){
+    TaskHandle_t tarea;
+    tarea = xTaskGetHandle("Rojo");
+    
+    while(true){
+        if(DigitalInputHasActivated(board->boton_prueba)){
+            DigitalOutputToggle(board->led_azul);
+        }
+        if(DigitalInputHasActivated(board->boton_cambiar)){
+            if (estado){
+                vTaskResume(tarea);
+                estado=0;}
+            else {
+                vTaskSuspend(tarea);
+                estado=1;}
+            
+        }
+        vTaskDelay(pdMS_TO_TICKS(250));
+    }
+}
+
 
 /* === Definiciones de funciones externas ================================== */
 
@@ -87,11 +131,28 @@ void Blinking(void * parameters) {
  **          El valor de retorno 0 es para evitar un error en el compilador.
  */
 int main(void) {
-    /* Inicializaciones y configuraciones de dispositivos */
+
+    static struct parametros_s parametros[3];
     board = BoardCreate();
 
+
+    parametros[0].led = board->led_rojo;
+    parametros[0].periodo = 500;
+
+    parametros[1].led = board->led_verde;
+    parametros[1].periodo = 750;
+
+    parametros[2].led = board->led_amarillo;
+    parametros[2].periodo = 250;
+    
+    /* Inicializaciones y configuraciones de dispositivos */
+    
+
     /* Creación de las tareas */
-    xTaskCreate(Blinking, "Baliza", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(Blinking, "Rojo", configMINIMAL_STACK_SIZE, &parametros[0], tskIDLE_PRIORITY + 1, NULL);
+    xTaskCreate(Blinking, "Verde", configMINIMAL_STACK_SIZE, &parametros[1], tskIDLE_PRIORITY + 2, NULL);
+    xTaskCreate(Blinking_Amariilo, "Amarillo", configMINIMAL_STACK_SIZE, &parametros[2], tskIDLE_PRIORITY + 2, NULL);
+    xTaskCreate(Teclado, "Teclado", configMINIMAL_STACK_SIZE, (void *)board, tskIDLE_PRIORITY + 3, NULL);
 
     /* Arranque del sistema operativo */
     vTaskStartScheduler();
