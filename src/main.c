@@ -55,6 +55,7 @@
 #include "bsp.h"
 #include "task.h"
 #include <stdbool.h>
+#include "semphr.h"
 
 /* === Definicion y Macros ================================================= */
 
@@ -72,6 +73,8 @@ static board_t board;
 
 static bool estado=0;
 
+static SemaphoreHandle_t mutex;
+
 /* === Definiciones de variables externas ================================== */
 
 /* === Definiciones de funciones internas ================================== */
@@ -79,8 +82,14 @@ static bool estado=0;
 void Blinking(void * parameters) {
     parametros_t parametros = parameters;
 
+
     while (true) {
-        DigitalOutputToggle(parametros->led);
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        DigitalOutputActivate(parametros->led);
+        vTaskDelay(pdMS_TO_TICKS(parametros->periodo));
+
+        DigitalOutputDeactivate(parametros->led);
+        xSemaphoreGive(mutex);
         vTaskDelay(pdMS_TO_TICKS(parametros->periodo));
     }
 }
@@ -134,25 +143,25 @@ int main(void) {
 
     static struct parametros_s parametros[3];
     board = BoardCreate();
-
+    
 
     parametros[0].led = board->led_rojo;
-    parametros[0].periodo = 500;
+    parametros[0].periodo = 1500;
 
-    parametros[1].led = board->led_verde;
-    parametros[1].periodo = 750;
+    parametros[1].led = board->led_azul;
+    parametros[1].periodo = 2500;
 
     parametros[2].led = board->led_amarillo;
     parametros[2].periodo = 250;
     
     /* Inicializaciones y configuraciones de dispositivos */
     
-
+    mutex = xSemaphoreCreateMutex();
     /* Creación de las tareas */
     xTaskCreate(Blinking, "Rojo", configMINIMAL_STACK_SIZE, &parametros[0], tskIDLE_PRIORITY + 1, NULL);
-    xTaskCreate(Blinking, "Verde", configMINIMAL_STACK_SIZE, &parametros[1], tskIDLE_PRIORITY + 2, NULL);
-    xTaskCreate(Blinking_Amariilo, "Amarillo", configMINIMAL_STACK_SIZE, &parametros[2], tskIDLE_PRIORITY + 2, NULL);
-    xTaskCreate(Teclado, "Teclado", configMINIMAL_STACK_SIZE, (void *)board, tskIDLE_PRIORITY + 3, NULL);
+    xTaskCreate(Blinking, "Azul", configMINIMAL_STACK_SIZE, &parametros[1], tskIDLE_PRIORITY + 2, NULL);
+    //xTaskCreate(Blinking_Amariilo, "Amarillo", configMINIMAL_STACK_SIZE, &parametros[2], tskIDLE_PRIORITY + 2, NULL);
+    //xTaskCreate(Teclado, "Teclado", configMINIMAL_STACK_SIZE, (void *)board, tskIDLE_PRIORITY + 3, NULL);
 
     /* Arranque del sistema operativo */
     vTaskStartScheduler();
